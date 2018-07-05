@@ -15,6 +15,7 @@ public class Wanderer : Agent {
 		mTaskManager.TriggerTask(taskWander, "Wanderer::Start");
 
         health = 100;
+        type = AgentType.Wanderer;
 	}
 	
 	// Update is called once per frame
@@ -28,9 +29,7 @@ public class Wanderer : Agent {
         {
             if (collision.gameObject.name.Contains("Bullet"))
             {
-                TaskReactHit taskReact = new TaskReactHit();
-                taskReact.priority = 4;
-                mTaskManager.TriggerTask(taskReact, "Wanderer::OnCollisionEnter");
+                OnSignal(Signal.Hit, "TaskAttackMelee::Attack");
             }
         }
 
@@ -38,5 +37,23 @@ public class Wanderer : Agent {
         {
             Debug.DrawRay(contact.point, contact.normal, Color.white);
         }
+    }
+
+    public override void OnSignal(Signal signal, string origin)
+    {
+        origin = origin + "::Follower";
+
+        switch (signal)
+        {
+            case Signal.Hit:
+                {
+                    TaskReactHit taskReact = new TaskReactHit();
+                    taskReact.priority = 4;
+                    mTaskManager.TriggerTask(taskReact, origin);
+                }
+                break;
+        }
+
+        mTaskManager.OnSignal(signal, origin);
     }
 }

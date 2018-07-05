@@ -1,7 +1,21 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class Agent : MonoBehaviour {
+public enum AgentType
+{
+    Wanderer = 0,
+    Follower,
+    Zombie,
 
-	public int health = 100;
+    Count
+}
+
+public abstract class Agent : MonoBehaviour {
+
+    public AgentType type;
+    public int health = 100;
+
+    public virtual void OnSignal(Signal signal, string origin)
+    {
+    }
 }

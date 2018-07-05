@@ -55,7 +55,12 @@ public class Actions : MonoBehaviour {
 		animator.SetTrigger ("Attack");
 	}
 
-	public void Death () {
+    public void AttackMelee()
+    {
+        animator.SetTrigger("Attack");
+    }
+
+    public void Death () {
 		if (animator.GetCurrentAnimatorStateInfo (0).IsName ("Death"))
 			animator.Play("Idle", 0);
 		else
@@ -79,6 +84,11 @@ public class Actions : MonoBehaviour {
 		animator.SetBool("Aiming", false);
 		animator.SetTrigger ("Jump");
 	}
+
+    public bool IsJumping()
+    {
+        return animator.GetCurrentAnimatorStateInfo(0).IsName("Jump");
+    }
 
 	public void Aiming () {
 		animator.SetBool ("Squat", false);

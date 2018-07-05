@@ -7,20 +7,20 @@ public class TaskReactLeader : Task
 	Transform leaderTransform;
 	NavigationController mNavigation;
 
-	public float duration = 0.5f;
-	float timer;
+    bool jumping;
 
-	// Use this for initialization
-	public override void Construct ()
+    // Use this for initialization
+    public override void Construct ()
 	{
 		mTransform = gameObject.GetComponent<Transform>();
 		mNavigation = gameObject.GetComponent<NavigationController>();
 		mNavigation.MoveTo(mTransform.position);
 
-		timer = duration;
-
+        // Throw jump request
         gameObject.GetComponent<Actions>().Jump();
-	}
+        jumping = false;
+
+    }
 
 	public void Initialize(Transform leader)
 	{
@@ -30,22 +30,28 @@ public class TaskReactLeader : Task
 	// Update is called once per frame
 	public override void Update ()
 	{
-		timer -= Time.deltaTime;
-		timer = Mathf.Max(timer, 0.0f);
+        bool currentlyJumping = gameObject.GetComponent<Actions>().IsJumping();
 
-		if (timer <= 0)
-		{
-            OnTimerEnds();
-		}
+        // It was jumping and not it´s not, it finished
+        if (jumping && !currentlyJumping)
+        {
+            OnAnimationEnds();
+        }
+
+        // Jumping just started
+        if (currentlyJumping && !jumping)
+        {
+            jumping = true;
+        }
 	}
 
-    public void OnTimerEnds()
+    public void OnAnimationEnds()
     {
         TaskManager mTaskManager = gameObject.GetComponent<TaskManager>();
-        mTaskManager.UnregisterTask(this, "TaskReactLeader::OnTimerEnds");
+        mTaskManager.UnregisterTask(this, "TaskReactLeader::OnAnimationEnds");
     }
 
-	public override void Destruct ()
+    public override void Destruct ()
 	{
 	
 	}

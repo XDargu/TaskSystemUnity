@@ -28,7 +28,7 @@ public class TaskManager : MonoBehaviour
 			return (flags & flag) == flag;
 		}
 
-		public bool isValid()
+		public bool IsValid()
 		{
 			return !IsFlagSet(TaskFlags.Destroyed);
 		}
@@ -66,7 +66,7 @@ public class TaskManager : MonoBehaviour
 
 		for (int i = 0; i < tasks.Count; i++)
 		{
-			if (tasks [i].isValid ())
+			if (tasks [i].IsValid ())
 			{
 				nextCurrentTask = tasks [i];
 				break;
@@ -76,7 +76,7 @@ public class TaskManager : MonoBehaviour
 		// Manage paused tasks
 		if (currentTask != null && currentTask != nextCurrentTask)
 		{
-			if (currentTask.isValid())
+			if (currentTask.IsValid())
 			{
 				currentTask.task.Pause();
 				currentTask.SetFlag (TaskFlags.Paused);
@@ -90,7 +90,7 @@ public class TaskManager : MonoBehaviour
 		}
 
 		if (nextCurrentTask != null)
-			Debug.Assert (nextCurrentTask.isValid());
+			Debug.Assert (nextCurrentTask.IsValid());
 
 		// Update tasks
 		currentTask = nextCurrentTask;
@@ -139,16 +139,18 @@ public class TaskManager : MonoBehaviour
 		// Prepare task
 		taskToRegister.gameObject = gameObject;
 
-		// Add new priority
-		TaskData taskData = new TaskData();
-		taskData.task = taskToRegister;
-		taskData.ID = lastID++;
+        // Add new priority
+        TaskData taskData = new TaskData
+        {
+            task = taskToRegister,
+            ID = lastID++
+        };
 
-		tasks.Insert(indexToInsert, taskData);
+        tasks.Insert(indexToInsert, taskData);
 		taskToRegister.Construct();
 
 		// Debugging data
-		taskDebugger.RegisterTask(taskData.ID, taskToRegister.GetType().ToString(), taskData.task.priority, origin);
+		taskDebugger.RegisterTask(taskData.ID, taskToRegister.GetType().ToString(), taskData.task.priority, origin, taskToRegister.type);
 	}
 
 
@@ -184,11 +186,13 @@ public class TaskManager : MonoBehaviour
 	{
 		foreach (TaskData taskData in tasks)
 		{
-			if (taskData.isValid())
+			if (taskData.IsValid())
 			{
                 taskData.task.OnSignal (signal, origin);
 			}
 		}
+
+        taskDebugger.RegisterSignal(signal, origin);
 	}
 
 	public void OnGUI ()

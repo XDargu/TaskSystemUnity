@@ -17,7 +17,9 @@ public class TaskManagerDebugger
         "TargetInRange",
         "TargetOutOfRange",
 
-        "TargetDeath"
+        "TargetDeath",
+
+        "Hit"
     };
 
 	static float taskHeight = 30.0f;
@@ -34,15 +36,24 @@ public class TaskManagerDebugger
 		public int priority = 0;
         public string origin = "";
         public string end = "";
+        public TaskType taskType = TaskType.Default;
 	}
 
-	GameObject mGameObject;
+    public class SignalHistoryData
+    {
+        public Signal signal;
+        public string origin = "";
+        public float time = 0;
+    }
+
+    GameObject mGameObject;
 
 	public TaskManagerDebugger (GameObject gameObject)
 	{
 		historyData = new List<TaskHistoryData>();
+        signalData = new List<SignalHistoryData>();
 
-		mGameObject = gameObject;
+        mGameObject = gameObject;
 	}
 
 	public void Update ()
@@ -53,7 +64,17 @@ public class TaskManagerDebugger
 		}
 	}
 
-    public void RegisterTask(int ID, string name, int priority, string origin)
+    public void RegisterSignal(Signal signal, string origin)
+    {
+        SignalHistoryData data = new SignalHistoryData();
+        data.signal = signal;
+        data.origin = origin;
+        data.time = Time.timeSinceLevelLoad;
+
+        signalData.Add(data);
+    }
+
+    public void RegisterTask(int ID, string name, int priority, string origin, TaskType type)
 	{
 		// Debugging data
 		TaskHistoryData historyTaskData = new TaskHistoryData();
@@ -62,6 +83,7 @@ public class TaskManagerDebugger
 		historyTaskData.startTime = Time.timeSinceLevelLoad;
 		historyTaskData.priority = priority;
         historyTaskData.origin = origin;
+        historyTaskData.taskType = type;
 		historyData.Add(historyTaskData);
 	}
 
@@ -117,13 +139,33 @@ public class TaskManagerDebugger
 
 		float width = elpasedTime * pixelPerSecond;
 
-		GUI.Box (new Rect (
+        GUI.contentColor = Color.white;
+        GUI.Box (new Rect (
 			horizontalOffset + startingPixel, 
 			10 + taskHeight * data.priority,
 			width,
 			taskHeight
 		), data.name);
 	}
+
+    public void RenderSignal(SignalHistoryData data, float startingTime, float verticalOffset)
+    {
+        if (data == null)
+        {
+            return;
+        }
+
+        float currentTime = Time.timeSinceLevelLoad;
+
+        float startTimeSnapToWindow = Mathf.Max(data.time, startingTime);
+        float startingPixel = (startTimeSnapToWindow - startingTime) * pixelPerSecond;
+
+        GUI.DrawTexture(new Rect(horizontalOffset + startingPixel, 10, 1, taskHeight * 5 + verticalOffset), Texture2D.whiteTexture, ScaleMode.StretchToFill);
+
+        GUI.contentColor = Color.black;
+        
+        GUI.Label(new Rect(horizontalOffset + startingPixel, taskHeight * 5 + 10 + verticalOffset, 600, 100), SignalNames[(int)data.signal]);
+    }
 
 	public void OnGUI ()
 	{
@@ -167,8 +209,25 @@ public class TaskManagerDebugger
 			RenderTask (data, startingTime);
 		}
 
-		// Draw basic lines
-		GUI.DrawTexture (new Rect (horizontalOffset, 10, timeFitsOnScreen * pixelPerSecond, 3), Texture2D.whiteTexture, ScaleMode.StretchToFill);
+        float verticalOffset = 0.0f;
+        foreach (SignalHistoryData data in signalData)
+        {
+            if (data.time < startingTime)
+            {
+                continue;
+            }
+
+            RenderSignal(data, startingTime, verticalOffset);
+
+            verticalOffset += 60.0f;
+            if (verticalOffset >= 300.0f)
+            {
+                verticalOffset = 0.0f;
+            }
+        }
+
+        // Draw basic lines
+        GUI.DrawTexture (new Rect (horizontalOffset, 10, timeFitsOnScreen * pixelPerSecond, 3), Texture2D.whiteTexture, ScaleMode.StretchToFill);
 		GUI.DrawTexture (new Rect (horizontalOffset, 10, 3, taskHeight * 5), Texture2D.whiteTexture, ScaleMode.StretchToFill);
 
 		GUI.DrawTexture (new Rect (horizontalOffset + (currentTime - startingTime) * pixelPerSecond, 10, 1, taskHeight * 5), Texture2D.whiteTexture, ScaleMode.StretchToFill);
@@ -178,7 +237,7 @@ public class TaskManagerDebugger
 		Vector2 convertedGUIPos = GUIUtility.ScreenToGUIPoint (screenPos);
 		convertedGUIPos.x = Mathf.Clamp (convertedGUIPos.x, horizontalOffset, Screen.width - horizontalOffset * 2);
 
-		GUI.DrawTexture (new Rect (convertedGUIPos.x, 10, 1, taskHeight * 5), Texture2D.whiteTexture, ScaleMode.StretchToFill);
+		GUI.DrawTexture (new Rect (convertedGUIPos.x, 10, 1, taskHeight * 8), Texture2D.whiteTexture, ScaleMode.StretchToFill);
 
 		// Draw active task at mouse time
 		float timeAtMouse = startingTime + (convertedGUIPos.x - horizontalOffset) / pixelPerSecond;
@@ -194,8 +253,9 @@ public class TaskManagerDebugger
 		}
 
 		GUI.contentColor = Color.black;
-		GUI.Label(new Rect(convertedGUIPos.x, taskHeight * 5 + 10, 600, 100 ), timeAsText);      
+		GUI.Label(new Rect(convertedGUIPos.x, taskHeight * 8 + 10, 600, 100 ), timeAsText);
 	}
 
 	List<TaskHistoryData> historyData;
+    List<SignalHistoryData> signalData;
 }

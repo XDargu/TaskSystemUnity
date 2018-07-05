@@ -18,7 +18,6 @@ public class TaskShoot : Task
         targetTransform = null;
         mTransform = gameObject.GetComponent<Transform>();
         mNavigation = gameObject.GetComponent<NavigationController>();
-        mNavigation.speed = 2.0f;
 
         timer = duration;
     }

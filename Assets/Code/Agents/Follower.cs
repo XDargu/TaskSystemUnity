@@ -19,14 +19,16 @@ public class Follower : Agent
 		mTaskManager.TriggerTask(taskWander, "Follower");
 
         gameObject.GetComponent<PlayerController>().SetArsenal("Rifle");
-	}
+
+        type = AgentType.Follower;
+    }
 	
 	// Update is called once per frame
 	void Update ()
 	{
 	}
 
-    public void OnSignal (Signal signal, string origin)
+    public override void OnSignal (Signal signal, string origin)
 	{
         origin = origin + "::Follower";
 
@@ -39,13 +41,13 @@ public class Follower : Agent
 				TaskFollow taskFollow = new TaskFollow();
 				taskFollow.priority = 1;
 				mTaskManager.TriggerTask(taskFollow, origin);
-				taskFollow.Initialize(mPerception.GetTargetTransform());
+				taskFollow.Initialize(mPerception.GetTargetAgent().transform);
 
 				// React to the finding
 				TaskReactLeader taskReact = new TaskReactLeader();
 				taskReact.priority = 3;
                 mTaskManager.TriggerTask(taskReact, origin);
-				taskReact.Initialize(mPerception.GetTargetTransform());
+				taskReact.Initialize(mPerception.GetTargetAgent().transform);
 			}
 			break;
 
@@ -56,7 +58,7 @@ public class Follower : Agent
                 TaskShoot taskShoot = new TaskShoot();
                 taskShoot.priority = 2;
                 mTaskManager.TriggerTask(taskShoot, origin);
-                taskShoot.Initialize(mPerception.GetTargetTransform(), bullet);
+                taskShoot.Initialize(mPerception.GetTargetAgent().transform, bullet);
 			}
 			break;
         case Signal.TargetDeath:
@@ -64,7 +66,14 @@ public class Follower : Agent
                 gameObject.GetComponent<NavigationController>().speed = 1;
             }
             break;
-		}
+        case Signal.Hit:
+            {
+                TaskReactHit taskReact = new TaskReactHit();
+                taskReact.priority = 4;
+                mTaskManager.TriggerTask(taskReact, origin);
+            }
+            break;
+        }
 
         mTaskManager.OnSignal(signal, origin);
 	}

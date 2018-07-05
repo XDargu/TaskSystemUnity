@@ -13,7 +13,11 @@ public class TaskFollow : Task
 		leaderTransform = null;
 		mTransform = gameObject.GetComponent<Transform>();
 		mNavigation = gameObject.GetComponent<NavigationController>();
-		mNavigation.speed = 2.0f;
+
+        if (gameObject.GetComponent<Agent>().type == AgentType.Follower)
+        {
+            mNavigation.speed = 3.0f;
+        }
 	}
 
 	public void Initialize(Transform leader)
@@ -31,7 +35,7 @@ public class TaskFollow : Task
 		Vector3 toLeader = leaderTransform.position - mTransform.position;
 		toLeader.Normalize();
 
-        return leaderTransform.position - leaderTransform.forward * 1.5f;
+        return leaderTransform.position - leaderTransform.forward * 0.7f;
 	}
 	
 	// Update is called once per frame

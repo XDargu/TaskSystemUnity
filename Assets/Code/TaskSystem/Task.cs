@@ -15,13 +15,24 @@ public enum Signal
 
     TargetDeath,
 
+    Hit,
+
+    Count
+}
+
+public enum TaskType
+{
+    Default,
+    Parallel,
+
     Count
 }
 
 public abstract class Task
 {
-	public int priority;
-	public GameObject gameObject;
+    public int priority = 0;
+    public TaskType type = TaskType.Default;
+	public GameObject gameObject = null;
 
 	// Use this for initialization
 	public abstract void Construct();

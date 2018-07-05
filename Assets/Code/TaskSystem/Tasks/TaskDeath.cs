@@ -15,6 +15,7 @@ public class TaskDeath : Task {
         mTransform = gameObject.GetComponent<Transform>();
         mNavigation = gameObject.GetComponent<NavigationController>();
         mNavigation.MoveTo(mTransform.position);
+        mNavigation.doAvoidance = false;
         timer = duration;
 
         gameObject.GetComponent<Actions>().Death();

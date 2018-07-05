@@ -6,24 +6,47 @@ public class PerceptionFollower : MonoBehaviour
 	Agent targetAgent;
 	Transform mTransform;
 
-	Follower mFollower;
+	Agent mAgent;
 
-	float targetRangeFind = 9.0f;
-	float targetRangeLose = 11.0f;
+    [Header("Detection ranges")]
+    public float targetRangeFind = 9.0f;
+    public float targetRangeLose = 11.0f;
 
-    float targetRangeInRange = 5.0f;
-    float targetRangeOutOfRAnge = 7.0f;
+    [Header("Attack ranges")]
+    public float targetRangeInRange = 5.0f;
+    public float targetRangeOutOfRange = 7.0f;
 
+    // R
     bool inRange = false;
     bool alive = true;
 
-	// Use this for initialization
-	void Start ()
+    public AgentType[] targetTypes;
+
+    void ResetTrackingVariables()
+    {
+        inRange = false;
+        alive = true;
+    }
+
+    // Use this for initialization
+    void Start ()
 	{
 		targetAgent = null;
 		mTransform = gameObject.GetComponent<Transform>();
-		mFollower = gameObject.GetComponent<Follower> ();
+		mAgent = gameObject.GetComponent<Agent> ();
 	}
+
+    public void SetDetectionRange(float distance, float hysteresis)
+    {
+        targetRangeFind = distance;
+        targetRangeLose = distance + hysteresis;
+    }
+
+    public void SetAttackRange(float distance, float hysteresis)
+    {
+        targetRangeInRange = distance;
+        targetRangeOutOfRange = distance + hysteresis;
+    }
 
     Agent TryFindTargetAround()
     {
@@ -31,13 +54,19 @@ public class PerceptionFollower : MonoBehaviour
         int i = 0;
         while (i < hitColliders.Length)
         {
-            Wanderer wanderer = hitColliders[i].GetComponent<Wanderer>();
-            if (wanderer != null)
+            Agent agent = hitColliders[i].GetComponent<Agent>();
+            
+            if (agent != null)
             {
-                Agent agent = wanderer.gameObject.GetComponent<Agent>();
-                if (agent.health > 0)
+                for (int j = 0; j < targetTypes.Length; j++)
                 {
-                    return agent;
+                    if (agent.type == targetTypes[j])
+                    {
+                        if (agent.health > 0)
+                        {
+                            return agent;
+                        }
+                    }
                 }
             }
 
@@ -56,7 +85,9 @@ public class PerceptionFollower : MonoBehaviour
             if (targetAgent != null)
             {
                 // Send signal, leader found
-                mFollower.OnSignal(Signal.TargetFound, "Perception");
+                mAgent.OnSignal(Signal.TargetFound, "Perception");
+
+                ResetTrackingVariables();
             }
         }
         else
@@ -71,7 +102,7 @@ public class PerceptionFollower : MonoBehaviour
                 if (distanceToTarget > targetRangeLose)
                 {
                     // Send signal, leader lost
-                    mFollower.OnSignal(Signal.TargetLost, "Perception");
+                    mAgent.OnSignal(Signal.TargetLost, "Perception");
                     targetAgent = null;
                 }
 
@@ -79,19 +110,19 @@ public class PerceptionFollower : MonoBehaviour
                 if (!inRange && distanceToTarget < targetRangeInRange)
                 {
                     inRange = true;
-                    mFollower.OnSignal(Signal.TargetInRange, "Perception");
+                    mAgent.OnSignal(Signal.TargetInRange, "Perception");
                 }
-                else if (distanceToTarget > targetRangeOutOfRAnge)
+                else if (inRange && distanceToTarget > targetRangeOutOfRange)
                 {
                     inRange = false;
-                    mFollower.OnSignal(Signal.TargetOutOfRange, "Perception");
+                    mAgent.OnSignal(Signal.TargetOutOfRange, "Perception");
                 }
 
                 // Death
-                if (targetAgent.health <= 0)
+                if (targetAgent != null && targetAgent.health <= 0)
                 {
                     alive = false;
-                    mFollower.OnSignal(Signal.TargetDeath, "Perception");
+                    mAgent.OnSignal(Signal.TargetDeath, "Perception");
                     targetAgent = null;
                 }
             }
@@ -104,16 +135,21 @@ public class PerceptionFollower : MonoBehaviour
 		UpdateTarget();
 	}
 
-	public Transform GetTargetTransform ()
+	public Agent GetTargetAgent()
 	{
-		return targetAgent.transform;
+		return targetAgent;
 	}
 
 	void OnDrawGizmos ()
 	{
 		if (mTransform != null)
 		{
-			UnityEditor.Handles.color = Color.magenta;
+            if (UnityEditor.Selection.activeGameObject != gameObject)
+            {
+                return;
+            }
+
+            UnityEditor.Handles.color = Color.magenta;
 			UnityEditor.Handles.DrawWireDisc (mTransform.position, mTransform.up, targetRangeFind);
 
 			//UnityEditor.Handles.color = Color.blue;
@@ -123,7 +159,13 @@ public class PerceptionFollower : MonoBehaviour
             UnityEditor.Handles.DrawWireDisc (mTransform.position, mTransform.up, targetRangeInRange);
 
             //UnityEditor.Handles.color = Color.green;
-            //UnityEditor.Handles.DrawWireDisc (mTransform.position, mTransform.up, targetRangeOutOfRAnge);
-		}
+            //UnityEditor.Handles.DrawWireDisc (mTransform.position, mTransform.up, targetRangeOutOfRange);
+            
+            if (targetAgent)
+            {
+                Gizmos.color = Color.red;
+                Gizmos.DrawSphere(targetAgent.transform.position + Vector3.up * 2.0f, 0.2f);
+            }
+        }
     }
 }
